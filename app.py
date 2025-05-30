@@ -1,6 +1,9 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime, timedelta
+import os
+
+##Archivo local "/Users/ricardomosqueira/historico_reservas.csv"
 
 # --------- 1. Cargar datos desde archivo local con botón de recarga ---------
 if st.button("🔄 Recargar datos"):
@@ -8,7 +11,8 @@ if st.button("🔄 Recargar datos"):
 
 @st.cache_data
 def load_data():
-    df = pd.read_csv("/Users/ricardomosqueira/historico_reservas.csv")
+    path = os.path.join(os.path.dirname(__file__), "historico_reservas.csv")
+    df = pd.read_csv(path)
     df['start_date'] = pd.to_datetime(df['start_date']).dt.date
     df['end_date'] = pd.to_datetime(df['end_date']).dt.date
     return df
