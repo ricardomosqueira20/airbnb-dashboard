@@ -5,17 +5,29 @@ import os
 import plotly.express as px
 
 # --------- 1. Cargar datos desde archivo local con botón de recarga ---------    
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
+
 @st.cache_data(ttl=0)  # TTL en 0 segundos = nunca cachea
 
-def load_data():
-    current_dir = os.getcwd()
-    path = os.path.join(os.path.dirname(__file__), "historico_reservas.csv")
-    df = pd.read_csv(path)
+def load_data_from_gsheet():
+    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+    creds = ServiceAccountCredentials.from_json_keyfile_name(
+        "sheets-api-calendar-0046b74b266e.json",
+        scope
+    )
+    client = gspread.authorize(creds)
+
+    sheet = client.open("Calendario Suites").sheet1
+    data = sheet.get_all_records()
+    df = pd.DataFrame(data)
     df['start_date'] = pd.to_datetime(df['start_date']).dt.date
     df['end_date'] = pd.to_datetime(df['end_date']).dt.date
     return df
 
-reservas = load_data()
+# Usa esta función en lugar de la anterior
+reservas = load_data_from_gsheet()
+
 
 # --------- 2. Filtrar reservas reales por plataforma ---------
 def filtrar_reservas(df):
