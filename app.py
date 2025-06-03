@@ -28,7 +28,12 @@ def load_data_from_gsheet():
 # Usa esta función en lugar de la anterior
 reservas = load_data_from_gsheet()
 
-
+# --------- Mostrar última fecha de modificación del archivo local ---------
+archivo_path = os.path.join(os.getcwd(), "historico_reservas.csv")
+if os.path.exists(archivo_path):
+    ultima_modificacion = datetime.fromtimestamp(os.path.getmtime(archivo_path))
+    st.sidebar.markdown(f"**📅 Última actualización del dashboard:** {ultima_modificacion.strftime('%Y-%m-%d %H:%M:%S')}")
+    
 # --------- 2. Filtrar reservas reales por plataforma ---------
 def filtrar_reservas(df):
     condiciones_airbnb_reserved = (df['source'] == 'Airbnb') & (
