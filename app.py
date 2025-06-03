@@ -3,10 +3,11 @@ import pandas as pd
 from datetime import datetime, timedelta
 import os
 import plotly.express as px
-import pytz
-from googleapiclient.discovery import build
-from oauth2client.service_account import ServiceAccountCredentials
 import gspread
+from oauth2client.service_account import ServiceAccountCredentials
+from googleapiclient.discovery import build  # <-- Asegúrate de tener esta importación
+import json
+import streamlit as st
 
 
 # --------- Mostrar fecha de última modificación del Google Sheet ---------
@@ -48,7 +49,7 @@ def filtrar_reservas(df):
     df.loc[condiciones_airbnb_off, 'source'] = 'OFF'
     return df[condiciones_airbnb_reserved | condiciones_airbnb_off | condiciones_booking | condiciones_yourrentals].copy()
 
-reservas = filtrar_reservas(reservas)
+reservas = filtrar_reservas(df)
 
 # --------- 3. Expandir reservas por noche, eliminando solapamientos ---------
 reservas_expandidas = reservas.copy()
