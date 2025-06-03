@@ -11,7 +11,7 @@ import json
 import streamlit as st
 
 
-@st.cache_data(ttl=0)  # TTL en 0 segundos = nunca cachea
+##@st.cache_data(ttl=0)  # TTL en 0 segundos = nunca cachea
 
 def load_data_from_gsheet():
     scope = ["https://www.googleapis.com/auth/spreadsheets.readonly","https://www.googleapis.com/auth/drive.readonly"]
