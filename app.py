@@ -21,16 +21,12 @@ reservas = pd.DataFrame(data)
 reservas['start_date'] = pd.to_datetime(reservas['start_date']).dt.date
 reservas['end_date'] = pd.to_datetime(reservas['end_date']).dt.date
 
-# ---------- OBTENER ÚLTIMA MODIFICACIÓN DEL SHEET ----------
-drive_service = build("drive", "v3", credentials=creds)
-spreadsheet_id = sheet.spreadsheet.id
-sheet_metadata = drive_service.files().get(fileId=spreadsheet_id, fields="modifiedTime").execute()
-last_updated = sheet_metadata['modifiedTime']
-last_updated_dt = datetime.strptime(last_updated, "%Y-%m-%dT%H:%M:%S.%fZ")
-last_updated_local = last_updated_dt.strftime("%Y-%m-%d %H:%M:%S")
-
-# Mostrar la fecha de última actualización
-st.sidebar.markdown(f"**Última actualización de datos:**\n{last_updated_local} UTC")
+# Obtener fecha de última modificación en Google Drive
+drive_service = build('drive', 'v3', credentials=creds)
+file_id = client.open("Calendario Suites").id
+file_metadata = drive_service.files().get(fileId=file_id, fields="modifiedTime").execute()
+last_modified = file_metadata['modifiedTime']
+st.sidebar.write(f"Última actualización de datos: {last_modified}")
 
 # --------- 2. Filtrar reservas reales por plataforma ---------
 def filtrar_reservas(df):
@@ -215,7 +211,6 @@ with tab2:
             )
             st.plotly_chart(fig, use_container_width=True)
 
-            # --------- Tabla de ocupación diaria ---------
             st.subheader("📅 Ocupación diaria del mes seleccionado")
             mes_datetime = datetime.strptime(f"{año_seleccionado}-{mes_seleccionado}-01", "%Y-%m-%d")
             dias_del_mes = pd.date_range(mes_datetime, mes_datetime + pd.offsets.MonthEnd(0))
@@ -235,9 +230,7 @@ with tab2:
                 ocupacion_dict = dias_ocupados.set_index('fecha_ocupada')['marca'].to_dict()
                 tabla_ocupacion[suite] = tabla_ocupacion.index.map(ocupacion_dict).fillna('')
 
-            tabla_ocupacion.index.name = "Día"
-            tabla_ocupacion = tabla_ocupacion.reset_index().sort_values(by="Día")
-            st.dataframe(tabla_ocupacion)
+            st.dataframe(tabla_ocupacion, use_container_width=True)
 
         else:
             st.info("No hay datos para graficar en este mes.")
