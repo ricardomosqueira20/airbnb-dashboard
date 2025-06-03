@@ -10,6 +10,7 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 
 # --------- 1. Cargar datos desde Google Sheets ---------
+@st.cache_data(ttl=0)
 def load_data_from_gsheet():
     scope = ["https://www.googleapis.com/auth/spreadsheets.readonly", "https://www.googleapis.com/auth/drive.readonly"]
     json_keyfile_dict = st.secrets["gcp"]
@@ -25,6 +26,7 @@ def load_data_from_gsheet():
 reservas = load_data_from_gsheet()
 
 # --------- 1.1 Obtener fecha de última modificación ---------
+@st.cache_data(ttl=0)
 def obtener_ultima_modificacion():
     SCOPES = ['https://www.googleapis.com/auth/drive.metadata.readonly']
     SERVICE_ACCOUNT_FILE = st.secrets["gcp"]
@@ -39,6 +41,26 @@ def obtener_ultima_modificacion():
 
 ultima_actualizacion = obtener_ultima_modificacion()
 st.markdown(f"#### 🔄 Última actualización de datos: `{ultima_actualizacion}`")
+
+# --------- 2. Filtrar reservas reales por plataforma ---------
+def filtrar_reservas(df):
+    condiciones_airbnb_reserved = (df['source'] == 'Airbnb') & (
+        df['summary'].str.contains("reserved", case=False, na=False)
+    )
+    condiciones_airbnb_off = (df['source'] == 'Airbnb') & (
+        df['summary'].str.contains("not available", case=False, na=False)
+    )
+    condiciones_booking = (df['source'] == 'Booking') & (
+        df['summary'].str.contains("CLOSED", na=False)
+    )
+    condiciones_yourrentals = (df['source'] == 'YourRentals') & (
+        df['summary'].str.len() == 6
+    )
+
+    df.loc[condiciones_airbnb_off, 'source'] = 'OFF'
+    return df[condiciones_airbnb_reserved | condiciones_airbnb_off | condiciones_booking | condiciones_yourrentals].copy()
+
+reservas = filtrar_reservas(reservas)
 
 # --------- 2. Filtrar reservas reales por plataforma ---------
 def filtrar_reservas(df):
