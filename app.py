@@ -11,29 +11,33 @@ import json
 import streamlit as st
 
 
-##@st.cache_data(ttl=0)  # TTL en 0 segundos = nunca cachea
+# ---------- AUTENTICACIÓN GOOGLE SHEETS ----------
+scope = [
+    "https://www.googleapis.com/auth/spreadsheets.readonly",
+    "https://www.googleapis.com/auth/drive.metadata.readonly"
+]
+json_keyfile_dict = st.secrets["gcp"]
+creds = ServiceAccountCredentials.from_json_keyfile_dict(json_keyfile_dict, scope)
+client = gspread.authorize(creds)
 
-def load_data_from_gsheet():
-    scope = ["https://www.googleapis.com/auth/spreadsheets.readonly","https://www.googleapis.com/auth/drive.readonly"]
-    json_keyfile_dict = st.secrets["gcp"]
-    creds = ServiceAccountCredentials.from_json_keyfile_dict(json_keyfile_dict, scope)
-    client = gspread.authorize(creds)
-    sheet = client.open("Calendario Suites").worksheet("api python")
-    data = sheet.get_all_records()
-    df = pd.DataFrame(data)
-    df['start_date'] = pd.to_datetime(df['start_date']).dt.date
-    df['end_date'] = pd.to_datetime(df['end_date']).dt.date
-    return df
+# ---------- CARGAR DATOS DESDE GOOGLE SHEET ----------
+sheet = client.open("Calendario Suites").worksheet("api python")
+data = sheet.get_all_records()
+df = pd.DataFrame(data)
+df['start_date'] = pd.to_datetime(df['start_date']).dt.date
+df['end_date'] = pd.to_datetime(df['end_date']).dt.date
 
-# Usa esta función en lugar de la anterior
-reservas = load_data_from_gsheet()
+# ---------- OBTENER ÚLTIMA MODIFICACIÓN DEL SHEET ----------
+drive_service = build("drive", "v3", credentials=creds)
+spreadsheet_id = sheet.spreadsheet.id
+sheet_metadata = drive_service.files().get(fileId=spreadsheet_id, fields="modifiedTime").execute()
+last_updated = sheet_metadata['modifiedTime']
+last_updated_dt = datetime.strptime(last_updated, "%Y-%m-%dT%H:%M:%S.%fZ")
+last_updated_local = last_updated_dt.strftime("%Y-%m-%d %H:%M:%S")
 
-# --------- Mostrar última fecha de modificación del archivo local ---------
-archivo_path = os.path.join(os.getcwd(), "historico_reservas.csv")
-if os.path.exists(archivo_path):
-    ultima_modificacion = datetime.fromtimestamp(os.path.getmtime(archivo_path))
-    st.sidebar.markdown(f"**📅 Última actualización del dashboard:** {ultima_modificacion.strftime('%Y-%m-%d %H:%M:%S')}")
-    
+# Mostrar la fecha de última actualización
+st.sidebar.markdown(f"**Última actualización de datos:**\n{last_updated_local} UTC")
+
 # --------- 2. Filtrar reservas reales por plataforma ---------
 def filtrar_reservas(df):
     condiciones_airbnb_reserved = (df['source'] == 'Airbnb') & (
