@@ -3,10 +3,9 @@ import pandas as pd
 from datetime import datetime, timedelta
 import os
 import plotly.express as px
-
-# --------- 1. Cargar datos desde archivo local con botón de recarga ---------    
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
+from googleapiclient.discovery import build  # <-- Asegúrate de tener esta importación
 import json
 import streamlit as st
 
