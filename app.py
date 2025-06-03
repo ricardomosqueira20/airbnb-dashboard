@@ -10,21 +10,16 @@ import json
 import streamlit as st
 
 
-# ---------- AUTENTICACIÓN GOOGLE SHEETS ----------
-scope = [
-    "https://www.googleapis.com/auth/spreadsheets.readonly",
-    "https://www.googleapis.com/auth/drive.metadata.readonly"
-]
+# ----------------- Configurar conexión con Google Sheets -----------------
+scope = ["https://www.googleapis.com/auth/spreadsheets.readonly", "https://www.googleapis.com/auth/drive.metadata.readonly"]
 json_keyfile_dict = st.secrets["gcp"]
 creds = ServiceAccountCredentials.from_json_keyfile_dict(json_keyfile_dict, scope)
 client = gspread.authorize(creds)
-
-# ---------- CARGAR DATOS DESDE GOOGLE SHEET ----------
 sheet = client.open("Calendario Suites").worksheet("api python")
 data = sheet.get_all_records()
-df = pd.DataFrame(data)
-df['start_date'] = pd.to_datetime(df['start_date']).dt.date
-df['end_date'] = pd.to_datetime(df['end_date']).dt.date
+reservas = pd.DataFrame(data)
+reservas['start_date'] = pd.to_datetime(reservas['start_date']).dt.date
+reservas['end_date'] = pd.to_datetime(reservas['end_date']).dt.date
 
 # ---------- OBTENER ÚLTIMA MODIFICACIÓN DEL SHEET ----------
 drive_service = build("drive", "v3", credentials=creds)
