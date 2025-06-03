@@ -226,8 +226,7 @@ with tab2:
             )
             st.plotly_chart(fig, use_container_width=True)
 
-            # --------- Tabla de ocupación diaria ---------
-            st.subheader("🗕️ Ocupación diaria del mes seleccionado")
+            st.subheader("📅 Ocupación diaria del mes seleccionado")
             mes_datetime = datetime.strptime(f"{año_seleccionado}-{mes_seleccionado}-01", "%Y-%m-%d")
             dias_del_mes = pd.date_range(mes_datetime, mes_datetime + pd.offsets.MonthEnd(0))
 
@@ -247,9 +246,7 @@ with tab2:
                 tabla_ocupacion[suite] = tabla_ocupacion.index.map(ocupacion_dict).fillna('')
 
             tabla_ocupacion.index.name = "Día"
-            tabla_ocupacion = tabla_ocupacion.reset_index().sort_values(by="Día")
             st.dataframe(tabla_ocupacion)
-
         else:
             st.info("No hay datos para graficar en este mes.")
     else:
