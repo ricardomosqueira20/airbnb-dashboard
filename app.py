@@ -14,7 +14,7 @@ import streamlit as st
 @st.cache_data(ttl=0)  # TTL en 0 segundos = nunca cachea
 
 def load_data_from_gsheet():
-    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+    scope = ["https://www.googleapis.com/auth/spreadsheets.readonly","https://www.googleapis.com/auth/drive.readonly"]
     json_keyfile_dict = st.secrets["gcp"]
     creds = ServiceAccountCredentials.from_json_keyfile_dict(json_keyfile_dict, scope)
     client = gspread.authorize(creds)
