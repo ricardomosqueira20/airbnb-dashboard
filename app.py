@@ -62,26 +62,6 @@ def filtrar_reservas(df):
 
 reservas = filtrar_reservas(reservas)
 
-# --------- 2. Filtrar reservas reales por plataforma ---------
-def filtrar_reservas(df):
-    condiciones_airbnb_reserved = (df['source'] == 'Airbnb') & (
-        df['summary'].str.contains("reserved", case=False, na=False)
-    )
-    condiciones_airbnb_off = (df['source'] == 'Airbnb') & (
-        df['summary'].str.contains("not available", case=False, na=False)
-    )
-    condiciones_booking = (df['source'] == 'Booking') & (
-        df['summary'].str.contains("CLOSED", na=False)
-    )
-    condiciones_yourrentals = (df['source'] == 'YourRentals') & (
-        df['summary'].str.len() == 6
-    )
-
-    df.loc[condiciones_airbnb_off, 'source'] = 'OFF'
-    return df[condiciones_airbnb_reserved | condiciones_airbnb_off | condiciones_booking | condiciones_yourrentals].copy()
-
-reservas = filtrar_reservas(df)
-
 # --------- 3. Expandir reservas por noche, eliminando solapamientos ---------
 reservas_expandidas = reservas.copy()
 reservas_expandidas['fecha_ocupada'] = reservas_expandidas.apply(
@@ -95,7 +75,7 @@ reservas_expandidas_unique = reservas_expandidas.sort_values(by='source').drop_d
 acronimos = {'Airbnb': 'AB', 'Booking': 'BK', 'YourRentals': 'YR', 'OFF': 'OFF'}
 
 # --------- 4. Crear pestañas ---------
-tab1, tab2 = st.tabs(["🛏️ Disponibilidad y Alertas", "📈 Ocupación mensual"])
+tab1, tab2 = st.tabs(["🛎️ Disponibilidad y Alertas", "📈 Ocupación mensual"])
 
 # --------- 5. Pestaña 1: Disponibilidad + Alertas ---------
 with tab1:
@@ -185,6 +165,7 @@ with tab1:
 
 # --------- 6. Pestaña 2: Ocupación mensual ---------
 with tab2:
+    st.markdown("### 📈 Esta es la pestaña 2: Ocupación mensual")
     st.title("📊 Ocupación mensual por suite")
 
     ocupacion = reservas_expandidas_unique.groupby(['property_name', 'mes']).size().reset_index(name='noches_reservadas')
@@ -222,7 +203,7 @@ with tab2:
         resumen_mes = resumen[
             (resumen['año'] == año_seleccionado) & 
             (resumen['mes_número'] == mes_seleccionado)
-        ].sort_values('noches_reservadas',ascending= False)
+        ].sort_values(by='noches_reservadas', ascending=False)
 
         st.subheader("📊 Gráfico de noches reservadas por suite")
         if not resumen_mes.empty:
@@ -245,11 +226,12 @@ with tab2:
             )
             st.plotly_chart(fig, use_container_width=True)
 
-            st.subheader("📅 Ocupación diaria del mes seleccionado")
+            # --------- Tabla de ocupación diaria ---------
+            st.subheader("🗕️ Ocupación diaria del mes seleccionado")
             mes_datetime = datetime.strptime(f"{año_seleccionado}-{mes_seleccionado}-01", "%Y-%m-%d")
             dias_del_mes = pd.date_range(mes_datetime, mes_datetime + pd.offsets.MonthEnd(0))
 
-            tabla_ocupacion = pd.DataFrame(index=dias_del_mes.strftime('%Y-%m-%d'))
+            tabla_ocupacion = pd.DataFrame(index=dias_del_mes.strftime('%m-%d'))
             resumen_ordenado = resumen_mes['property_name'].tolist()
             for suite in resumen_ordenado:
                 dias_ocupados = reservas_expandidas_unique[
@@ -257,17 +239,18 @@ with tab2:
                     (reservas_expandidas_unique['fecha_ocupada'].dt.month == int(mes_seleccionado)) &
                     (reservas_expandidas_unique['fecha_ocupada'].dt.year == int(año_seleccionado))
                 ][['fecha_ocupada', 'source']]
-                dias_ocupados['fecha_ocupada'] = dias_ocupados['fecha_ocupada'].dt.strftime('%Y-%m-%d')
+                dias_ocupados['fecha_ocupada'] = dias_ocupados['fecha_ocupada'].dt.strftime('%m-%d')
                 dias_ocupados['marca'] = dias_ocupados['source'].map(acronimos).fillna('')
                 dias_ocupados['marca'] = '🟩 ' + dias_ocupados['marca']
 
                 ocupacion_dict = dias_ocupados.set_index('fecha_ocupada')['marca'].to_dict()
                 tabla_ocupacion[suite] = tabla_ocupacion.index.map(ocupacion_dict).fillna('')
 
-            st.dataframe(tabla_ocupacion, use_container_width=True)
+            tabla_ocupacion.index.name = "Día"
+            tabla_ocupacion = tabla_ocupacion.reset_index().sort_values(by="Día")
+            st.dataframe(tabla_ocupacion)
 
         else:
             st.info("No hay datos para graficar en este mes.")
     else:
         st.info("No hay datos de ocupación disponibles con los filtros actuales.")
-
