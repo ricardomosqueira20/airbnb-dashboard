@@ -18,7 +18,7 @@ def load_data_from_gsheet():
     json_keyfile_dict = st.secrets["gcp"]
     creds = ServiceAccountCredentials.from_json_keyfile_dict(json_keyfile_dict, scope)
     client = gspread.authorize(creds)
-    sheet = client.open("Calendario Suites").sheet1
+    sheet = client.open("Calendario Suites").worksheet("api python")
     data = sheet.get_all_records()
     df = pd.DataFrame(data)
     df['start_date'] = pd.to_datetime(df['start_date']).dt.date
