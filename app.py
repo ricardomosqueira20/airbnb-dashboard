@@ -3,30 +3,32 @@ import pandas as pd
 from datetime import datetime, timedelta
 import os
 import plotly.express as px
-import gspread
+import pytz
+from googleapiclient.discovery import build
 from oauth2client.service_account import ServiceAccountCredentials
-from googleapiclient.discovery import build  # <-- Asegúrate de tener esta importación
-import json
-import streamlit as st
+import gspread
 
 
-# ----------------- Configurar conexión con Google Sheets -----------------
-scope = ["https://www.googleapis.com/auth/spreadsheets.readonly", "https://www.googleapis.com/auth/drive.metadata.readonly"]
+# --------- Mostrar fecha de última modificación del Google Sheet ---------
+scope = ["https://www.googleapis.com/auth/spreadsheets.readonly", "https://www.googleapis.com/auth/drive.readonly"]
 json_keyfile_dict = st.secrets["gcp"]
 creds = ServiceAccountCredentials.from_json_keyfile_dict(json_keyfile_dict, scope)
+service = build('drive', 'v3', credentials=creds)
+spreadsheet_id = "1YlIXhN9hK0aOUzvSOQbZLBhxy30wEatXZcTAGe9u5So"
+file = service.files().get(fileId=spreadsheet_id, fields='modifiedTime').execute()
+last_modified = file['modifiedTime']
+last_modified_dt = datetime.fromisoformat(last_modified.replace("Z", "+00:00"))
+mexico_tz = pytz.timezone('America/Mexico_City')
+last_modified_local = last_modified_dt.astimezone(mexico_tz)
+st.sidebar.markdown(f"**Última actualización de datos:** {last_modified_local.strftime('%Y-%m-%d %H:%M:%S')} CST")
+
+# --------- 1. Cargar datos desde Google Sheets ---------
 client = gspread.authorize(creds)
 sheet = client.open("Calendario Suites").worksheet("api python")
 data = sheet.get_all_records()
-reservas = pd.DataFrame(data)
-reservas['start_date'] = pd.to_datetime(reservas['start_date']).dt.date
-reservas['end_date'] = pd.to_datetime(reservas['end_date']).dt.date
-
-# Obtener fecha de última modificación en Google Drive
-drive_service = build('drive', 'v3', credentials=creds)
-file_id = client.open("Calendario Suites").id
-file_metadata = drive_service.files().get(fileId=file_id, fields="modifiedTime").execute()
-last_modified = file_metadata['modifiedTime']
-st.sidebar.write(f"Última actualización de datos: {last_modified}")
+df = pd.DataFrame(data)
+df['start_date'] = pd.to_datetime(df['start_date']).dt.date
+df['end_date'] = pd.to_datetime(df['end_date']).dt.date
 
 # --------- 2. Filtrar reservas reales por plataforma ---------
 def filtrar_reservas(df):
