@@ -43,6 +43,7 @@ ultima_actualizacion = obtener_ultima_modificacion()
 st.markdown(f"#### 🔄 Última actualización de datos: `{ultima_actualizacion}`")
 
 # --------- 2. Filtrar reservas reales por plataforma ---------
+# --------- 2. Filtrar reservas reales por plataforma ---------
 def filtrar_reservas(df):
     condiciones_airbnb_reserved = (df['source'] == 'Airbnb') & (
         df['summary'].str.contains("reserved", case=False, na=False)
@@ -56,9 +57,40 @@ def filtrar_reservas(df):
     condiciones_yourrentals = (df['source'] == 'YourRentals') & (
         df['summary'].str.len() == 6
     )
+    condiciones_offline = (df['source'] == 'Offline')
 
+    # Reetiquetar "Airbnb (Not available)" como OFF
     df.loc[condiciones_airbnb_off, 'source'] = 'OFF'
-    return df[condiciones_airbnb_reserved | condiciones_airbnb_off | condiciones_booking | condiciones_yourrentals].copy()
+
+    # Filtrar
+    df_filtrado = df[
+        condiciones_airbnb_reserved |
+        condiciones_airbnb_off |
+        condiciones_booking |
+        condiciones_yourrentals |
+        condiciones_offline
+    ].copy()
+
+    # Asignar prioridad para deduplicación
+    prioridad = {
+        'Offline': 1,
+        'OFF': 2,
+        'Airbnb': 3,
+        'Booking': 4,
+        'YourRentals': 5
+    }
+    df_filtrado['prioridad'] = df_filtrado['source'].map(prioridad)
+
+    # Ordenar por prioridad y eliminar duplicados
+    df_filtrado.sort_values(by=['property_name', 'start_date', 'prioridad'], inplace=True)
+    df_filtrado.drop_duplicates(
+        subset=["property_name", "start_date", "end_date"],
+        keep='first',
+        inplace=True
+    )
+
+    df_filtrado.drop(columns='prioridad', inplace=True)
+    return df_filtrado
 
 reservas = filtrar_reservas(reservas)
 
