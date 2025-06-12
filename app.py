@@ -104,7 +104,7 @@ reservas_expandidas['mes'] = reservas_expandidas['fecha_ocupada'].dt.to_period("
 reservas_expandidas_unique = reservas_expandidas.sort_values(by='source').drop_duplicates(subset=['property_name', 'fecha_ocupada'])
 
 # Mapeo de acrónimos
-acronimos = {'Airbnb': 'AB', 'Booking': 'BK', 'YourRentals': 'YR', 'OFF': 'OFF'}
+acronimos = {'Airbnb': 'AB', 'Booking': 'BK', 'YourRentals': 'YR', 'OFF': 'OFF','Offline':'OFF'}
 
 # --------- 4. Crear pestañas ---------
 tab1, tab2 = st.tabs(["🛎️ Disponibilidad y Alertas", "📈 Ocupación mensual"])
