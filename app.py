@@ -134,19 +134,15 @@ with tab1:
 
     st.title("📅 Alertas del mes seleccionado")
 
-    # 🛡️ Aseguramos que 'fecha_ocupada' sea datetime y eliminamos los que no lo sean
-    reservas_expandidas_unique['fecha_ocupada'] = pd.to_datetime(
-    reservas_expandidas_unique['fecha_ocupada'], errors='coerce'
-    )
+    # 🛡️ Aseguramos que 'fecha_ocupada' es datetime y filtramos NaT
+    reservas_expandidas_unique['fecha_ocupada'] = pd.to_datetime(reservas_expandidas_unique['fecha_ocupada'], errors='coerce')
     reservas_expandidas_unique = reservas_expandidas_unique.dropna(subset=['fecha_ocupada'])
 
-    # 🔁 Creamos 'mes' como string tipo YYYY-MM
+# 🔁 Creamos 'mes' como string tipo YYYY-MM
     reservas_expandidas_unique['mes'] = reservas_expandidas_unique['fecha_ocupada'].dt.to_period("M").astype(str)
 
-    # ✅ Aseguramos que todos los valores de 'mes' sean strings válidos
-    meses_alertas = reservas_expandidas_unique['mes'].dropna().astype(str)
-    meses_alertas = [m for m in meses_alertas if len(m) == 7 and '-' in m and m.replace('-', '').isnumeric()]
-    meses_alertas = sorted(set(meses_alertas))  # ← importante: no mezclar NaN con str
+# ✅ Obtener meses únicos válidos ordenados alfabéticamente
+    meses_alertas = sorted(reservas_expandidas_unique['mes'].dropna().unique().tolist())
 
     # 🧩 Continuamos normalmente
     if not meses_alertas:
