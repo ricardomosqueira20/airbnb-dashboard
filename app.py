@@ -43,7 +43,6 @@ ultima_actualizacion = obtener_ultima_modificacion()
 st.markdown(f"#### 🔄 Última actualización de datos: `{ultima_actualizacion}`")
 
 # --------- 2. Filtrar reservas reales por plataforma ---------
-# --------- 2. Filtrar reservas reales por plataforma ---------
 def filtrar_reservas(df):
     condiciones_airbnb_reserved = (df['source'] == 'Airbnb') & (
         df['summary'].str.contains("reserved", case=False, na=False)
@@ -134,7 +133,7 @@ with tab1:
         else:
             st.error("No hay suites disponibles para ese rango.")
 
-          st.title("📅 Alertas del mes seleccionado")
+        st.title("📅 Alertas del mes seleccionado")
 
     # 🛡️ Aseguramos que 'fecha_ocupada' es datetime
     reservas_expandidas_unique['fecha_ocupada'] = pd.to_datetime(reservas_expandidas_unique['fecha_ocupada'], errors='coerce')
