@@ -136,10 +136,12 @@ with tab1:
 
     st.title("📅 Alertas del mes seleccionado")
     # 🔧 Última corrección: 2025-06-24 19:41:52 - Manejo de error en meses_alertas (tipos mezclados)
-    meses_alertas = reservas_expandidas_unique['mes'].dt.strftime('%Y-%m').unique()
+    # 🔧 Última corrección robusta: 2025-06-24
+    # Asegurar que la columna 'mes' esté en formato string tipo YYYY-MM
+    reservas_expandidas_unique['mes'] = reservas_expandidas_unique['fecha_ocupada'].dt.to_period("M").astype(str)
+    meses_alertas = reservas_expandidas_unique['mes'].dropna().unique()
     meses_alertas = [m for m in meses_alertas if isinstance(m, str) and '-' in m]
     mes_alerta = st.selectbox("Selecciona un mes para ver alertas", sorted(meses_alertas))
-
     año_seleccionado, mes_seleccionado = mes_alerta.split('-')
 
     st.subheader("⚠️ Posibles dobles reservas")
