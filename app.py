@@ -1,5 +1,3 @@
-# app.py
-
 import streamlit as st
 import pandas as pd
 from datetime import datetime, timedelta
@@ -42,8 +40,9 @@ def obtener_ultima_modificacion():
     return fecha_local.strftime("%Y-%m-%d %H:%M:%S")
 
 ultima_actualizacion = obtener_ultima_modificacion()
-st.markdown(f"#### 🔄 Última actualización de datos: `{ultima_actualizacion}`")
+st.markdown(f"#### 🔄 Última actualización de datos: {ultima_actualizacion}")
 
+# --------- 2. Filtrar reservas reales por plataforma ---------
 # --------- 2. Filtrar reservas reales por plataforma ---------
 def filtrar_reservas(df):
     condiciones_airbnb_reserved = (df['source'] == 'Airbnb') & (
@@ -60,8 +59,10 @@ def filtrar_reservas(df):
     )
     condiciones_offline = (df['source'] == 'Offline')
 
+    # Reetiquetar "Airbnb (Not available)" como OFF
     df.loc[condiciones_airbnb_off, 'source'] = 'OFF'
 
+    # Filtrar
     df_filtrado = df[
         condiciones_airbnb_reserved |
         condiciones_airbnb_off |
@@ -70,6 +71,7 @@ def filtrar_reservas(df):
         condiciones_offline
     ].copy()
 
+    # Asignar prioridad para deduplicación
     prioridad = {
         'Offline': 1,
         'OFF': 2,
@@ -79,6 +81,7 @@ def filtrar_reservas(df):
     }
     df_filtrado['prioridad'] = df_filtrado['source'].map(prioridad)
 
+    # Ordenar por prioridad y eliminar duplicados
     df_filtrado.sort_values(by=['property_name', 'start_date', 'prioridad'], inplace=True)
     df_filtrado.drop_duplicates(
         subset=["property_name", "start_date", "end_date"],
@@ -97,12 +100,11 @@ reservas_expandidas['fecha_ocupada'] = reservas_expandidas.apply(
     lambda row: pd.date_range(row['start_date'], row['end_date'] - timedelta(days=1)), axis=1
 )
 reservas_expandidas = reservas_expandidas.explode('fecha_ocupada')
+reservas_expandidas['mes'] = reservas_expandidas['fecha_ocupada'].dt.to_period("M")
 reservas_expandidas_unique = reservas_expandidas.sort_values(by='source').drop_duplicates(subset=['property_name', 'fecha_ocupada'])
 
-# 🛡️ Validar tipo fecha_ocupada y generar mes como string tipo YYYY-MM
-reservas_expandidas_unique['fecha_ocupada'] = pd.to_datetime(reservas_expandidas_unique['fecha_ocupada'], errors='coerce')
-reservas_expandidas_unique = reservas_expandidas_unique.dropna(subset=['fecha_ocupada'])
-reservas_expandidas_unique['mes'] = reservas_expandidas_unique['fecha_ocupada'].dt.to_period("M").astype(str)
+# Mapeo de acrónimos
+acronimos = {'Airbnb': 'AB', 'Booking': 'BK', 'YourRentals': 'YR', 'OFF': 'OFF','Offline':'OFF'}
 
 # --------- 4. Crear pestañas ---------
 tab1, tab2 = st.tabs(["🛎️ Disponibilidad y Alertas", "📈 Ocupación mensual"])
@@ -133,23 +135,9 @@ with tab1:
             st.error("No hay suites disponibles para ese rango.")
 
     st.title("📅 Alertas del mes seleccionado")
-
-    # 🛡️ Aseguramos que 'fecha_ocupada' es datetime y filtramos NaT
-    reservas_expandidas_unique['fecha_ocupada'] = pd.to_datetime(reservas_expandidas_unique['fecha_ocupada'], errors='coerce')
-    reservas_expandidas_unique = reservas_expandidas_unique.dropna(subset=['fecha_ocupada'])
-
-# 🔁 Creamos 'mes' como string tipo YYYY-MM
-    reservas_expandidas_unique['mes'] = reservas_expandidas_unique['fecha_ocupada'].dt.to_period("M").astype(str)
-
-# ✅ Obtener meses únicos válidos ordenados alfabéticamente
-    meses_alertas = sorted(reservas_expandidas_unique['mes'].dropna().unique().tolist())
-
-    # 🧩 Continuamos normalmente
-    if not meses_alertas:
-        st.error("No hay meses disponibles.")
-    else:
-        mes_alerta = st.selectbox("Selecciona un mes para ver alertas", meses_alertas)
-        año_seleccionado, mes_seleccionado = mes_alerta.split('-')
+    meses_alertas = reservas_expandidas_unique['mes'].dt.strftime('%Y-%m').unique()
+    mes_alerta = st.selectbox("Selecciona un mes para ver alertas", sorted(meses_alertas))
+    año_seleccionado, mes_seleccionado = mes_alerta.split('-')
 
     st.subheader("⚠️ Posibles dobles reservas")
     reservas_mes = reservas[
