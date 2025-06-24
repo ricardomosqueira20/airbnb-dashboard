@@ -153,8 +153,6 @@ with tab1:
         mes_alerta = st.selectbox("Selecciona un mes para ver alertas", meses_alertas)
         año_seleccionado, mes_seleccionado = mes_alerta.split('-')
 
-    año_seleccionado, mes_seleccionado = mes_alerta.split('-')
-
     st.subheader("⚠️ Posibles dobles reservas")
     reservas_mes = reservas[
         (pd.to_datetime(reservas['start_date']).dt.year == int(año_seleccionado)) &
