@@ -43,7 +43,6 @@ ultima_actualizacion = obtener_ultima_modificacion()
 st.markdown(f"#### 🔄 Última actualización de datos: `{ultima_actualizacion}`")
 
 # --------- 2. Filtrar reservas reales por plataforma ---------
-# --------- 2. Filtrar reservas reales por plataforma ---------
 def filtrar_reservas(df):
     condiciones_airbnb_reserved = (df['source'] == 'Airbnb') & (
         df['summary'].str.contains("reserved", case=False, na=False)
@@ -93,7 +92,9 @@ def filtrar_reservas(df):
     return df_filtrado
 
 reservas = filtrar_reservas(reservas)
-
+reservas['start_date'] = pd.to_datetime(reservas['start_date'], errors='coerce')
+reservas['end_date'] = pd.to_datetime(reservas['end_date'], errors='coerce')
+reservas = reservas.dropna(subset=['start_date', 'end_date'])
 # --------- 3. Expandir reservas por noche, eliminando solapamientos ---------
 reservas_expandidas = reservas.copy()
 reservas_expandidas['fecha_ocupada'] = reservas_expandidas.apply(
