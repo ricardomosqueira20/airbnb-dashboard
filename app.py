@@ -134,21 +134,24 @@ with tab1:
         else:
             st.error("No hay suites disponibles para ese rango.")
 
-        st.title("📅 Alertas del mes seleccionado")
+          st.title("📅 Alertas del mes seleccionado")
 
-    # ✅ Convertimos fecha_ocupada a datetime, luego a string tipo 'YYYY-MM'
-    reservas_expandidas_unique['mes'] = pd.to_datetime(reservas_expandidas_unique['fecha_ocupada'], errors='coerce').dt.to_period('M').astype(str)
+    # 🛡️ Aseguramos que 'fecha_ocupada' es datetime
+    reservas_expandidas_unique['fecha_ocupada'] = pd.to_datetime(reservas_expandidas_unique['fecha_ocupada'], errors='coerce')
 
-    # ✅ Limpiamos los meses para asegurarnos que todos son strings válidos tipo YYYY-MM
+    # 🔁 Creamos 'mes' como string tipo YYYY-MM
+    reservas_expandidas_unique['mes'] = reservas_expandidas_unique['fecha_ocupada'].dt.to_period("M").astype(str)
+
+    # 🧹 Filtramos solo los valores válidos tipo string y que tengan formato YYYY-MM
     meses_alertas = reservas_expandidas_unique['mes'].dropna().astype(str)
-    meses_alertas = [m for m in meses_alertas if isinstance(m, str) and '-' in m and len(m) == 7]
+    meses_alertas = [m for m in meses_alertas if isinstance(m, str) and '-' in m and len(m) == 7 and m.replace('-', '').isnumeric()]
 
-    # ✅ Eliminamos duplicados y ordenamos
-    meses_alertas = sorted(set(meses_alertas))
+    # ✅ Ordenamos la lista sin mezclar tipos
+    meses_alertas = sorted(list(set(meses_alertas)))
 
-    # ✅ Si no hay meses disponibles, mostramos mensaje
+    # 🧩 Continuamos normalmente
     if not meses_alertas:
-        st.error("No hay datos válidos de meses para mostrar.")
+        st.error("No hay meses disponibles.")
     else:
         mes_alerta = st.selectbox("Selecciona un mes para ver alertas", meses_alertas)
         año_seleccionado, mes_seleccionado = mes_alerta.split('-')
