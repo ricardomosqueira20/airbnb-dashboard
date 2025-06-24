@@ -134,14 +134,25 @@ with tab1:
         else:
             st.error("No hay suites disponibles para ese rango.")
 
-    st.title("📅 Alertas del mes seleccionado")
-    # 🔧 Última corrección: 2025-06-24 19:41:52 - Manejo de error en meses_alertas (tipos mezclados)
-    # 🔧 Última corrección robusta: 2025-06-24
-    # Asegurar que la columna 'mes' esté en formato string tipo YYYY-MM
-    reservas_expandidas_unique['mes'] = reservas_expandidas_unique['fecha_ocupada'].dt.to_period("M").astype(str)
-    meses_alertas = reservas_expandidas_unique['mes'].dropna().unique()
-    meses_alertas = [m for m in meses_alertas if isinstance(m, str) and '-' in m]
-    mes_alerta = st.selectbox("Selecciona un mes para ver alertas", sorted(meses_alertas))
+        st.title("📅 Alertas del mes seleccionado")
+
+    # ✅ Convertimos fecha_ocupada a datetime, luego a string tipo 'YYYY-MM'
+    reservas_expandidas_unique['mes'] = pd.to_datetime(reservas_expandidas_unique['fecha_ocupada'], errors='coerce').dt.to_period('M').astype(str)
+
+    # ✅ Limpiamos los meses para asegurarnos que todos son strings válidos tipo YYYY-MM
+    meses_alertas = reservas_expandidas_unique['mes'].dropna().astype(str)
+    meses_alertas = [m for m in meses_alertas if isinstance(m, str) and '-' in m and len(m) == 7]
+
+    # ✅ Eliminamos duplicados y ordenamos
+    meses_alertas = sorted(set(meses_alertas))
+
+    # ✅ Si no hay meses disponibles, mostramos mensaje
+    if not meses_alertas:
+        st.error("No hay datos válidos de meses para mostrar.")
+    else:
+        mes_alerta = st.selectbox("Selecciona un mes para ver alertas", meses_alertas)
+        año_seleccionado, mes_seleccionado = mes_alerta.split('-')
+
     año_seleccionado, mes_seleccionado = mes_alerta.split('-')
 
     st.subheader("⚠️ Posibles dobles reservas")
