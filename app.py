@@ -95,6 +95,7 @@ reservas = filtrar_reservas(reservas)
 reservas['start_date'] = pd.to_datetime(reservas['start_date'], errors='coerce')
 reservas['end_date'] = pd.to_datetime(reservas['end_date'], errors='coerce')
 reservas = reservas.dropna(subset=['start_date', 'end_date'])
+
 # --------- 3. Expandir reservas por noche, eliminando solapamientos ---------
 reservas_expandidas = reservas.copy()
 reservas_expandidas['fecha_ocupada'] = reservas_expandidas.apply(
@@ -136,7 +137,7 @@ with tab1:
             st.error("No hay suites disponibles para ese rango.")
 
     st.title("📅 Alertas del mes seleccionado")
-    meses_alertas = reservas_expandidas_unique['mes'].dt.strftime('%Y-%m').unique()
+    meses_alertas = reservas_expandidas_unique['mes'].dropna().unique()
     mes_alerta = st.selectbox("Selecciona un mes para ver alertas", sorted(meses_alertas))
     año_seleccionado, mes_seleccionado = mes_alerta.split('-')
 
