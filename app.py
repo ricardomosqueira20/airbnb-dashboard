@@ -43,6 +43,7 @@ ultima_actualizacion = obtener_ultima_modificacion()
 st.markdown(f"#### 🔄 Última actualización de datos: `{ultima_actualizacion}`")
 
 # --------- 2. Filtrar reservas reales por plataforma ---------
+# --------- 2. Filtrar reservas reales por plataforma ---------
 def filtrar_reservas(df):
     condiciones_airbnb_reserved = (df['source'] == 'Airbnb') & (
         df['summary'].str.contains("reserved", case=False, na=False)
@@ -92,9 +93,6 @@ def filtrar_reservas(df):
     return df_filtrado
 
 reservas = filtrar_reservas(reservas)
-reservas['start_date'] = pd.to_datetime(reservas['start_date'], errors='coerce')
-reservas['end_date'] = pd.to_datetime(reservas['end_date'], errors='coerce')
-reservas = reservas.dropna(subset=['start_date', 'end_date'])
 
 # --------- 3. Expandir reservas por noche, eliminando solapamientos ---------
 reservas_expandidas = reservas.copy()
@@ -102,7 +100,7 @@ reservas_expandidas['fecha_ocupada'] = reservas_expandidas.apply(
     lambda row: pd.date_range(row['start_date'], row['end_date'] - timedelta(days=1)), axis=1
 )
 reservas_expandidas = reservas_expandidas.explode('fecha_ocupada')
-reservas_expandidas['mes'] = reservas_expandidas['fecha_ocupada'].dt.to_period("M").astype(str)
+reservas_expandidas['mes'] = reservas_expandidas['fecha_ocupada'].dt.to_period("M")
 reservas_expandidas_unique = reservas_expandidas.sort_values(by='source').drop_duplicates(subset=['property_name', 'fecha_ocupada'])
 
 # Mapeo de acrónimos
@@ -137,7 +135,7 @@ with tab1:
             st.error("No hay suites disponibles para ese rango.")
 
     st.title("📅 Alertas del mes seleccionado")
-    meses_alertas = reservas_expandidas_unique['mes'].dropna().unique()
+    meses_alertas = reservas_expandidas_unique['mes'].dt.strftime('%Y-%m').unique()
     mes_alerta = st.selectbox("Selecciona un mes para ver alertas", sorted(meses_alertas))
     año_seleccionado, mes_seleccionado = mes_alerta.split('-')
 
