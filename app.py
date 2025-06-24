@@ -135,8 +135,11 @@ with tab1:
             st.error("No hay suites disponibles para ese rango.")
 
     st.title("📅 Alertas del mes seleccionado")
+    # 🔧 Última corrección: 2025-06-24 19:41:52 - Manejo de error en meses_alertas (tipos mezclados)
     meses_alertas = reservas_expandidas_unique['mes'].dt.strftime('%Y-%m').unique()
+    meses_alertas = [m for m in meses_alertas if isinstance(m, str) and '-' in m]
     mes_alerta = st.selectbox("Selecciona un mes para ver alertas", sorted(meses_alertas))
+
     año_seleccionado, mes_seleccionado = mes_alerta.split('-')
 
     st.subheader("⚠️ Posibles dobles reservas")
