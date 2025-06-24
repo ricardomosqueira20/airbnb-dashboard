@@ -40,7 +40,7 @@ def obtener_ultima_modificacion():
     return fecha_local.strftime("%Y-%m-%d %H:%M:%S")
 
 ultima_actualizacion = obtener_ultima_modificacion()
-st.markdown(f"#### 🔄 Última actualización de datos: {ultima_actualizacion}")
+st.markdown(f"#### 🔄 Última actualización de datos: `{ultima_actualizacion}`")
 
 # --------- 2. Filtrar reservas reales por plataforma ---------
 # --------- 2. Filtrar reservas reales por plataforma ---------
