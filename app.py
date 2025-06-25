@@ -136,7 +136,7 @@ with tab1:
             st.error("No hay suites disponibles para ese rango.")
 
     st.title("📅 Alertas del mes seleccionado")
-    meses_alertas = reservas_expandidas_unique['mes'].dt.strftime('%Y-%m').unique()
+    meses_alertas = reservas_expandidas_unique['mes'].astype(str).unique()
     mes_alerta = st.selectbox("Selecciona un mes para ver alertas", sorted(meses_alertas))
     año_seleccionado, mes_seleccionado = mes_alerta.split('-')
 
