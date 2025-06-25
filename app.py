@@ -102,6 +102,7 @@ reservas_expandidas['fecha_ocupada'] = reservas_expandidas.apply(
 reservas_expandidas = reservas_expandidas.explode('fecha_ocupada')
 reservas_expandidas['mes'] = reservas_expandidas['fecha_ocupada'].dt.to_period("M")
 reservas_expandidas_unique = reservas_expandidas.sort_values(by='source').drop_duplicates(subset=['property_name', 'fecha_ocupada'])
+reservas_expandidas_unique = reservas_expandidas_unique.dropna(subset=['fecha_ocupada', 'mes'])
 
 # Mapeo de acrónimos
 acronimos = {'Airbnb': 'AB', 'Booking': 'BK', 'YourRentals': 'YR', 'OFF': 'OFF','Offline':'OFF'}
