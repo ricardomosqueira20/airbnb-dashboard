@@ -19,8 +19,9 @@ def load_data_from_gsheet():
     sheet = client.open("Calendario Suites").worksheet("api python")
     data = sheet.get_all_records()
     df = pd.DataFrame(data)
-    df['start_date'] = pd.to_datetime(df['start_date']).dt.date
-    df['end_date'] = pd.to_datetime(df['end_date']).dt.date
+    df['start_date'] = pd.to_datetime(df['start_date'])
+    df['end_date'] = pd.to_datetime(df['end_date'])
+
     return df
 
 reservas = load_data_from_gsheet()
