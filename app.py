@@ -177,11 +177,7 @@ with tab1:
     check_outs_df = check_outs_df[check_outs_df['end_date'] == fecha_consulta]
 
     # Pasajes: días intermedios entre check-in y check-out
-    pasajes_df = reservas[
-        (reservas['start_date'] < fecha_consulta) &
-        (reservas['end_date'] > fecha_consulta)
-    ]
-
+    pasajes_df = reservas[(reservas['start_date'] < fecha_consulta) & (reservas['end_date'] > fecha_consulta)]
     st.metric("Check-ins", len(check_ins_df))
     st.metric("Check-outs", len(check_outs_df))
     st.metric("Pasajes (limpieza)", len(pasajes_df))
@@ -195,8 +191,8 @@ with tab1:
         st.dataframe(check_outs_df[['property_name', 'start_date', 'end_date', 'source', 'summary']])
     
     # Sección pasajes
-    st.subheader("🧹 Pasajes (días intermedios con limpieza)")
     if not pasajes_df.empty:
+        st.subheader("🧹 Pasajes (días intermedios con limpieza)")
         st.dataframe(pasajes_df[['property_name', 'start_date', 'end_date', 'source', 'summary']])
     else:
         st.info("No hay pasajes en esta fecha.")
