@@ -19,9 +19,8 @@ def load_data_from_gsheet():
     sheet = client.open("Calendario Suites").worksheet("api python")
     data = sheet.get_all_records()
     df = pd.DataFrame(data)
-    df['start_date'] = pd.to_datetime(df['start_date'])
-    df['end_date'] = pd.to_datetime(df['end_date'])
-
+    df['start_date'] = pd.to_datetime(df['start_date']).dt.date
+    df['end_date'] = pd.to_datetime(df['end_date']).dt.date
     return df
 
 reservas = load_data_from_gsheet()
@@ -41,7 +40,7 @@ def obtener_ultima_modificacion():
     return fecha_local.strftime("%Y-%m-%d %H:%M:%S")
 
 ultima_actualizacion = obtener_ultima_modificacion()
-st.markdown(f"#### 🔄 Última actualización de datos: `{ultima_actualizacion}`")
+st.markdown(f"#### 🔄 Última actualización de datos: {ultima_actualizacion}")
 
 # --------- 2. Filtrar reservas reales por plataforma ---------
 # --------- 2. Filtrar reservas reales por plataforma ---------
@@ -98,21 +97,12 @@ reservas = filtrar_reservas(reservas)
 # --------- 3. Expandir reservas por noche, eliminando solapamientos ---------
 reservas_expandidas = reservas.copy()
 reservas_expandidas['fecha_ocupada'] = reservas_expandidas.apply(
-    lambda row: pd.date_range(row['start_date'], row['end_date']), axis=1
+    lambda row: pd.date_range(row['start_date'], row['end_date'] - timedelta(days=1)), axis=1
 )
 reservas_expandidas = reservas_expandidas.explode('fecha_ocupada')
 reservas_expandidas['mes'] = reservas_expandidas['fecha_ocupada'].dt.to_period("M")
 reservas_expandidas_unique = reservas_expandidas.sort_values(by='source').drop_duplicates(subset=['property_name', 'fecha_ocupada'])
 reservas_expandidas_unique = reservas_expandidas_unique.dropna(subset=['fecha_ocupada', 'mes'])
-def clasificar_movimiento(row):
-    if row['fecha_ocupada'] == row['start_date']:
-        return 'check-in'
-    elif row['fecha_ocupada'] == row['end_date']:
-        return 'check-out'
-    else:
-        return 'pasaje'
-
-reservas_expandidas_unique['tipo_movimiento'] = reservas_expandidas_unique.apply(clasificar_movimiento, axis=1)
 
 # Mapeo de acrónimos
 acronimos = {'Airbnb': 'AB', 'Booking': 'BK', 'YourRentals': 'YR', 'OFF': 'OFF','Offline':'OFF'}
@@ -177,41 +167,25 @@ with tab1:
     else:
         st.success("No se detectaron dobles reservas con solapamiento en el mes seleccionado.")
 
-    st.subheader("🧾 Check-ins y Check-outs y pasajes por día")
+    st.subheader("🧾 Check-ins y Check-outs por día")
     fecha_consulta = st.date_input("Selecciona una fecha para ver los movimientos")
 
-# Filtrar check-ins, check-outs y pasajes
-    movimientos_dia = reservas_expandidas_unique[reservas_expandidas_unique['fecha_ocupada'] == fecha_consulta]
+    check_ins_df = reservas.sort_values(by='source').drop_duplicates(subset=['property_name', 'start_date'])
+    check_outs_df = reservas.sort_values(by='source').drop_duplicates(subset=['property_name', 'end_date'])
 
-    check_ins_df = movimientos_dia[movimientos_dia['tipo_movimiento'] == 'check-in']
-    check_outs_df = movimientos_dia[movimientos_dia['tipo_movimiento'] == 'check-out']
-    pasajes_df = movimientos_dia[movimientos_dia['tipo_movimiento'] == 'pasaje']
+    check_ins_df = check_ins_df[check_ins_df['start_date'] == fecha_consulta]
+    check_outs_df = check_outs_df[check_outs_df['end_date'] == fecha_consulta]
 
     st.metric("Check-ins", len(check_ins_df))
     st.metric("Check-outs", len(check_outs_df))
-    st.metric("Pasajes (limpieza)", len(pasajes_df))
 
-# Sección check-ins
-    st.subheader("🔑 Check-ins")
     if not check_ins_df.empty:
+        st.subheader("🔑 Check-ins")
         st.dataframe(check_ins_df[['property_name', 'start_date', 'end_date', 'source', 'summary']])
-    else:
-        st.info("No hay check-ins en esta fecha.")
 
-# Sección check-outs
-    st.subheader("🏁 Check-outs")
     if not check_outs_df.empty:
+        st.subheader("🏁 Check-outs")
         st.dataframe(check_outs_df[['property_name', 'start_date', 'end_date', 'source', 'summary']])
-    else:
-        st.info("No hay check-outs en esta fecha.")
-
-# Sección pasajes
-    st.subheader("🧹 Pasajes (días intermedios con limpieza)")
-    if not pasajes_df.empty:
-        st.dataframe(pasajes_df[['property_name', 'start_date', 'end_date', 'source', 'summary']])
-    else:
-        st.info("No hay pasajes en esta fecha.")
-
 
     st.subheader("🚨 Alertas de cambios el mismo día")
     ambas = set(check_ins_df['property_name']).intersection(set(check_outs_df['property_name']))
