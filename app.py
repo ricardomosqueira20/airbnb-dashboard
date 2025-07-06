@@ -103,6 +103,15 @@ reservas_expandidas = reservas_expandidas.explode('fecha_ocupada')
 reservas_expandidas['mes'] = reservas_expandidas['fecha_ocupada'].dt.to_period("M")
 reservas_expandidas_unique = reservas_expandidas.sort_values(by='source').drop_duplicates(subset=['property_name', 'fecha_ocupada'])
 reservas_expandidas_unique = reservas_expandidas_unique.dropna(subset=['fecha_ocupada', 'mes'])
+def clasificar_movimiento(row):
+    if row['fecha_ocupada'] == row['start_date']:
+        return 'check-in'
+    elif row['fecha_ocupada'] == row['end_date'] - timedelta(days=1):
+        return 'check-out'
+    else:
+        return 'pasaje'
+
+reservas_expandidas_unique['tipo_movimiento'] = reservas_expandidas_unique.apply(clasificar_movimiento, axis=1)
 
 # Mapeo de acrónimos
 acronimos = {'Airbnb': 'AB', 'Booking': 'BK', 'YourRentals': 'YR', 'OFF': 'OFF','Offline':'OFF'}
@@ -170,14 +179,16 @@ with tab1:
     st.subheader("🧾 Check-ins y Check-outs por día")
     fecha_consulta = st.date_input("Selecciona una fecha para ver los movimientos")
 
-    check_ins_df = reservas.sort_values(by='source').drop_duplicates(subset=['property_name', 'start_date'])
-    check_outs_df = reservas.sort_values(by='source').drop_duplicates(subset=['property_name', 'end_date'])
+    # Filtrar check-ins, check-outs y pasajes
+    movimientos_dia = reservas_expandidas_unique[reservas_expandidas_unique['fecha_ocupada'] == fecha_consulta]
 
-    check_ins_df = check_ins_df[check_ins_df['start_date'] == fecha_consulta]
-    check_outs_df = check_outs_df[check_outs_df['end_date'] == fecha_consulta]
+    check_ins_df = movimientos_dia[movimientos_dia['tipo_movimiento'] == 'check-in']
+    check_outs_df = movimientos_dia[movimientos_dia['tipo_movimiento'] == 'check-out']
+    pasajes_df = movimientos_dia[movimientos_dia['tipo_movimiento'] == 'pasaje']
 
     st.metric("Check-ins", len(check_ins_df))
     st.metric("Check-outs", len(check_outs_df))
+    st.metric("Pasajes (limpieza)", len(pasajes_df))
 
     if not check_ins_df.empty:
         st.subheader("🔑 Check-ins")
@@ -186,6 +197,10 @@ with tab1:
     if not check_outs_df.empty:
         st.subheader("🏁 Check-outs")
         st.dataframe(check_outs_df[['property_name', 'start_date', 'end_date', 'source', 'summary']])
+
+    if not pasajes_df.empty:
+        st.subheader("🧹 Pasajes (días intermedios con limpieza)")
+        st.dataframe(pasajes_df[['property_name', 'start_date', 'end_date', 'source', 'summary']])
 
     st.subheader("🚨 Alertas de cambios el mismo día")
     ambas = set(check_ins_df['property_name']).intersection(set(check_outs_df['property_name']))
