@@ -97,7 +97,7 @@ reservas = filtrar_reservas(reservas)
 # --------- 3. Expandir reservas por noche, eliminando solapamientos ---------
 reservas_expandidas = reservas.copy()
 reservas_expandidas['fecha_ocupada'] = reservas_expandidas.apply(
-    lambda row: pd.date_range(row['start_date'], row['end_date'] - timedelta(days=1)), axis=1
+    lambda row: pd.date_range(row['start_date'], row['end_date']), axis=1
 )
 reservas_expandidas = reservas_expandidas.explode('fecha_ocupada')
 reservas_expandidas['mes'] = reservas_expandidas['fecha_ocupada'].dt.to_period("M")
@@ -106,7 +106,7 @@ reservas_expandidas_unique = reservas_expandidas_unique.dropna(subset=['fecha_oc
 def clasificar_movimiento(row):
     if row['fecha_ocupada'] == row['start_date']:
         return 'check-in'
-    elif row['fecha_ocupada'] == row['end_date'] - timedelta(days=1):
+    elif row['fecha_ocupada'] == row['end_date']:
         return 'check-out'
     else:
         return 'pasaje'
