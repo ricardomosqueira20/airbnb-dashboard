@@ -177,7 +177,7 @@ with tab1:
     check_outs_df = check_outs_df[check_outs_df['end_date'] == fecha_consulta]
 
     # Pasajes: días intermedios entre check-in y check-out
-    pasajes_df = reservas[(reservas['start_date'] < fecha_consulta) & (reservas['end_date'] > fecha_consulta)]
+    pasajes_df = reservas[(reservas['start_date'] < fecha_consulta) & (reservas['end_date'] > fecha_consulta) & (reservas['summary']!='Airbnb (Not available)')]
     st.metric("Check-ins", len(check_ins_df))
     st.metric("Check-outs", len(check_outs_df))
     st.metric("Pasajes (limpieza)", len(pasajes_df))
