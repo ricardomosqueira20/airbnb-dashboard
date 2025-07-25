@@ -130,8 +130,9 @@ with tab1:
         if len(suites_disponibles) > 0:
             cols = st.columns(3)
             for idx, suite in enumerate(suites_disponibles):
+                pull = reservas[reservas['property_name'] == suite]['pull_rentas'].iloc[0]
                 with cols[idx % 3]:
-                    st.success(f"🏠 {suite}")
+                    st.success(f"🏠 {suite} — {pull}")
         else:
             st.error("No hay suites disponibles para ese rango.")
 
@@ -233,6 +234,15 @@ with tab2:
     resumen['año'] = resumen['mes'].str[:4]
     resumen['mes_número'] = resumen['mes'].str[5:7]
 
+###Dividiendo en dos segmentos
+
+    resumen_ls = resumen[resumen['property_name'].isin(
+    reservas[reservas['pull_rentas'] == 'acapulco_suites_ls']['property_name'].unique())]
+
+    resumen_ext = resumen[resumen['property_name'].isin(
+    reservas[reservas['pull_rentas'] == 'external_owners']['property_name'].unique()
+)]
+
     if not resumen.empty:
         años_disponibles = sorted(resumen['año'].dropna().unique())
         meses_disponibles = sorted(resumen['mes_número'].dropna().unique())
@@ -243,54 +253,50 @@ with tab2:
         with col2:
             mes_seleccionado = st.selectbox("Selecciona un mes", meses_disponibles)
 
-        resumen_mes = resumen[
-            (resumen['año'] == año_seleccionado) & 
-            (resumen['mes_número'] == mes_seleccionado)
-        ].sort_values(by='noches_reservadas', ascending=False)
+        # ---- Gráfico 1: acapulco_suites_ls ----
+        st.subheader("🏡 Acapulco Suites LS")
+        resumen_mes_ls = resumen_ls[
+            (resumen_ls['año'] == año_seleccionado) &
+            (resumen_ls['mes_número'] == mes_seleccionado)
+        ]
 
-        st.subheader("📊 Gráfico de noches reservadas por suite")
-        if not resumen_mes.empty:
-            fig = px.bar(
-                resumen_mes,
+        suites_ls = resumen_mes_ls['property_name'].unique()
+        suites_seleccionadas_ls = st.multiselect("Selecciona suites de Acapulco Suites LS", suites_ls, default=suites_ls)
+        df_grafico_ls = resumen_mes_ls[resumen_mes_ls['property_name'].isin(suites_seleccionadas_ls)]
+
+        if not df_grafico_ls.empty:
+            fig_ls = px.bar(
+                df_grafico_ls,
                 x='property_name',
                 y='noches_reservadas',
-                hover_data={
-                    'noches_reservadas': True,
-                    'ocupacion_%': ':.2f'
-                },
+                hover_data={'noches_reservadas': True, 'ocupacion_%': ':.2f'},
                 labels={'noches_reservadas': 'Noches reservadas', 'property_name': 'Suite'},
-                title=f"Noches reservadas por suite – {año_seleccionado}-{mes_seleccionado}"
+                title=f"Noches reservadas – {año_seleccionado}-{mes_seleccionado} – Acapulco Suites LS"
             )
-            fig.update_layout(
-                xaxis_title='Suite',
-                yaxis_title='Noches reservadas',
-                hoverlabel=dict(bgcolor="white", font_size=14),
-                bargap=0.2,
-            )
-            st.plotly_chart(fig, use_container_width=True)
-
-            st.subheader("📅 Ocupación diaria del mes seleccionado")
-            mes_datetime = datetime.strptime(f"{año_seleccionado}-{mes_seleccionado}-01", "%Y-%m-%d")
-            dias_del_mes = pd.date_range(mes_datetime, mes_datetime + pd.offsets.MonthEnd(0))
-
-            tabla_ocupacion = pd.DataFrame(index=dias_del_mes.strftime('%m-%d'))
-            resumen_ordenado = resumen_mes['property_name'].tolist()
-            for suite in resumen_ordenado:
-                dias_ocupados = reservas_expandidas_unique[
-                    (reservas_expandidas_unique['property_name'] == suite) &
-                    (reservas_expandidas_unique['fecha_ocupada'].dt.month == int(mes_seleccionado)) &
-                    (reservas_expandidas_unique['fecha_ocupada'].dt.year == int(año_seleccionado))
-                ][['fecha_ocupada', 'source']]
-                dias_ocupados['fecha_ocupada'] = dias_ocupados['fecha_ocupada'].dt.strftime('%m-%d')
-                dias_ocupados['marca'] = dias_ocupados['source'].map(acronimos).fillna('')
-                dias_ocupados['marca'] = '🟩 ' + dias_ocupados['marca']
-
-                ocupacion_dict = dias_ocupados.set_index('fecha_ocupada')['marca'].to_dict()
-                tabla_ocupacion[suite] = tabla_ocupacion.index.map(ocupacion_dict).fillna('')
-
-            tabla_ocupacion.index.name = "Día"
-            st.dataframe(tabla_ocupacion)
+            st.plotly_chart(fig_ls, use_container_width=True)
         else:
-            st.info("No hay datos para graficar en este mes.")
-    else:
-        st.info("No hay datos de ocupación disponibles con los filtros actuales.")
+            st.info("No hay datos para mostrar en Acapulco Suites LS.")
+
+        # ---- Gráfico 2: external_owners ----
+        st.subheader("🏠 External Owners")
+        resumen_mes_ext = resumen_ext[
+            (resumen_ext['año'] == año_seleccionado) &
+            (resumen_ext['mes_número'] == mes_seleccionado)
+        ]
+
+        suites_ext = resumen_mes_ext['property_name'].unique()
+        suites_seleccionadas_ext = st.multiselect("Selecciona suites de External Owners", suites_ext, default=suites_ext)
+        df_grafico_ext = resumen_mes_ext[resumen_mes_ext['property_name'].isin(suites_seleccionadas_ext)]
+
+        if not df_grafico_ext.empty:
+            fig_ext = px.bar(
+                df_grafico_ext,
+                x='property_name',
+                y='noches_reservadas',
+                hover_data={'noches_reservadas': True, 'ocupacion_%': ':.2f'},
+                labels={'noches_reservadas': 'Noches reservadas', 'property_name': 'Suite'},
+                title=f"Noches reservadas – {año_seleccionado}-{mes_seleccionado} – External Owners"
+            )
+            st.plotly_chart(fig_ext, use_container_width=True)
+        else:
+            st.info("No hay datos para mostrar en External Owners.")
