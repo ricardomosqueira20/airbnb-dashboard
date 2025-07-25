@@ -263,6 +263,7 @@ with tab2:
         suites_ls = resumen_mes_ls['property_name'].unique()
         suites_seleccionadas_ls = st.multiselect("Selecciona suites de Acapulco Suites LS", suites_ls, default=suites_ls)
         df_grafico_ls = resumen_mes_ls[resumen_mes_ls['property_name'].isin(suites_seleccionadas_ls)]
+        df_grafico_ls = df_grafico_ls.sort_values(by = 'noches_reservadas', ascending = False)
 
         if not df_grafico_ls.empty:
             fig_ls = px.bar(
@@ -287,6 +288,7 @@ with tab2:
         suites_ext = resumen_mes_ext['property_name'].unique()
         suites_seleccionadas_ext = st.multiselect("Selecciona suites de External Owners", suites_ext, default=suites_ext)
         df_grafico_ext = resumen_mes_ext[resumen_mes_ext['property_name'].isin(suites_seleccionadas_ext)]
+        df_grafico_ext = df_grafico_ext.sort_values(by = 'noches_reservadas', ascending=False)
 
         if not df_grafico_ext.empty:
             fig_ext = px.bar(
@@ -300,3 +302,28 @@ with tab2:
             st.plotly_chart(fig_ext, use_container_width=True)
         else:
             st.info("No hay datos para mostrar en External Owners.")
+    
+st.subheader("📅 Ocupación diaria del mes seleccionado (todas las suites)")
+
+mes_datetime = datetime.strptime(f"{año_seleccionado}-{mes_seleccionado}-01", "%Y-%m-%d")
+dias_del_mes = pd.date_range(mes_datetime, mes_datetime + pd.offsets.MonthEnd(0))
+
+tabla_ocupacion = pd.DataFrame(index=dias_del_mes.strftime('%m-%d'))
+suites_todas = resumen_mes.sort_values(by='noches_reservadas', ascending=False)['property_name'].unique()
+
+for suite in suites_todas:
+    dias_ocupados = reservas_expandidas_unique[
+        (reservas_expandidas_unique['property_name'] == suite) &
+        (reservas_expandidas_unique['fecha_ocupada'].dt.month == int(mes_seleccionado)) &
+        (reservas_expandidas_unique['fecha_ocupada'].dt.year == int(año_seleccionado))
+    ][['fecha_ocupada', 'source']]
+
+    dias_ocupados['fecha_ocupada'] = dias_ocupados['fecha_ocupada'].dt.strftime('%m-%d')
+    dias_ocupados['marca'] = dias_ocupados['source'].map(acronimos).fillna('')
+    dias_ocupados['marca'] = '🟩 ' + dias_ocupados['marca']
+
+    ocupacion_dict = dias_ocupados.set_index('fecha_ocupada')['marca'].to_dict()
+    tabla_ocupacion[suite] = tabla_ocupacion.index.map(ocupacion_dict).fillna('')
+
+tabla_ocupacion.index.name = "Día"
+st.dataframe(tabla_ocupacion)
