@@ -256,18 +256,18 @@ with tab2:
     resumen_mes = resumen[(resumen['año'] == año_seleccionado) & (resumen['mes_número'] == mes_seleccionado)].sort_values(by='noches_reservadas', ascending=False)
 
         # ---- Gráfico 1: acapulco_suites_ls ----
-        st.subheader("🏡 Acapulco Suites LS")
-        resumen_mes_ls = resumen_ls[
+    st.subheader("🏡 Acapulco Suites LS")
+    resumen_mes_ls = resumen_ls[
             (resumen_ls['año'] == año_seleccionado) &
             (resumen_ls['mes_número'] == mes_seleccionado)
         ]
 
-        suites_ls = resumen_mes_ls['property_name'].unique()
-        suites_seleccionadas_ls = st.multiselect("Selecciona suites de Acapulco Suites LS", suites_ls, default=suites_ls)
-        df_grafico_ls = resumen_mes_ls[resumen_mes_ls['property_name'].isin(suites_seleccionadas_ls)]
-        df_grafico_ls = df_grafico_ls.sort_values(by = 'noches_reservadas', ascending = False)
+    suites_ls = resumen_mes_ls['property_name'].unique()
+    suites_seleccionadas_ls = st.multiselect("Selecciona suites de Acapulco Suites LS", suites_ls, default=suites_ls)
+    df_grafico_ls = resumen_mes_ls[resumen_mes_ls['property_name'].isin(suites_seleccionadas_ls)]
+    df_grafico_ls = df_grafico_ls.sort_values(by = 'noches_reservadas', ascending = False)
 
-        if not df_grafico_ls.empty:
+    if not df_grafico_ls.empty:
             fig_ls = px.bar(
                 df_grafico_ls,
                 x='property_name',
@@ -277,22 +277,22 @@ with tab2:
                 title=f"Noches reservadas – {año_seleccionado}-{mes_seleccionado} – Acapulco Suites LS"
             )
             st.plotly_chart(fig_ls, use_container_width=True)
-        else:
+    else:
             st.info("No hay datos para mostrar en Acapulco Suites LS.")
 
         # ---- Gráfico 2: external_owners ----
-        st.subheader("🏠 External Owners")
-        resumen_mes_ext = resumen_ext[
+    st.subheader("🏠 External Owners")
+    resumen_mes_ext = resumen_ext[
             (resumen_ext['año'] == año_seleccionado) &
             (resumen_ext['mes_número'] == mes_seleccionado)
         ]
 
-        suites_ext = resumen_mes_ext['property_name'].unique()
-        suites_seleccionadas_ext = st.multiselect("Selecciona suites de External Owners", suites_ext, default=suites_ext)
-        df_grafico_ext = resumen_mes_ext[resumen_mes_ext['property_name'].isin(suites_seleccionadas_ext)]
-        df_grafico_ext = df_grafico_ext.sort_values(by = 'noches_reservadas', ascending=False)
+    suites_ext = resumen_mes_ext['property_name'].unique()
+    suites_seleccionadas_ext = st.multiselect("Selecciona suites de External Owners", suites_ext, default=suites_ext)
+    df_grafico_ext = resumen_mes_ext[resumen_mes_ext['property_name'].isin(suites_seleccionadas_ext)]
+    df_grafico_ext = df_grafico_ext.sort_values(by = 'noches_reservadas', ascending=False)
 
-        if not df_grafico_ext.empty:
+    if not df_grafico_ext.empty:
             fig_ext = px.bar(
                 df_grafico_ext,
                 x='property_name',
@@ -302,7 +302,7 @@ with tab2:
                 title=f"Noches reservadas – {año_seleccionado}-{mes_seleccionado} – External Owners"
             )
             st.plotly_chart(fig_ext, use_container_width=True)
-        else:
+    else:
             st.info("No hay datos para mostrar en External Owners.")
     
     st.subheader("📅 Ocupación diaria del mes seleccionado (todas las suites)")
