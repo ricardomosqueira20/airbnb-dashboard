@@ -252,6 +252,8 @@ with tab2:
             año_seleccionado = st.selectbox("Selecciona un año", años_disponibles)
         with col2:
             mes_seleccionado = st.selectbox("Selecciona un mes", meses_disponibles)
+        
+    resumen_mes = resumen[(resumen['año'] == año_seleccionado) & (resumen['mes_número'] == mes_seleccionado)].sort_values(by='noches_reservadas', ascending=False)
 
         # ---- Gráfico 1: acapulco_suites_ls ----
         st.subheader("🏡 Acapulco Suites LS")
@@ -303,27 +305,27 @@ with tab2:
         else:
             st.info("No hay datos para mostrar en External Owners.")
     
-st.subheader("📅 Ocupación diaria del mes seleccionado (todas las suites)")
+    st.subheader("📅 Ocupación diaria del mes seleccionado (todas las suites)")
 
-mes_datetime = datetime.strptime(f"{año_seleccionado}-{mes_seleccionado}-01", "%Y-%m-%d")
-dias_del_mes = pd.date_range(mes_datetime, mes_datetime + pd.offsets.MonthEnd(0))
+    mes_datetime = datetime.strptime(f"{año_seleccionado}-{mes_seleccionado}-01", "%Y-%m-%d")
+    dias_del_mes = pd.date_range(mes_datetime, mes_datetime + pd.offsets.MonthEnd(0))
 
-tabla_ocupacion = pd.DataFrame(index=dias_del_mes.strftime('%m-%d'))
-suites_todas = resumen_mes.sort_values(by='noches_reservadas', ascending=False)['property_name'].unique()
+    tabla_ocupacion = pd.DataFrame(index=dias_del_mes.strftime('%m-%d'))
+    suites_todas = resumen_mes.sort_values(by='noches_reservadas', ascending=False)['property_name'].unique()
 
-for suite in suites_todas:
-    dias_ocupados = reservas_expandidas_unique[
-        (reservas_expandidas_unique['property_name'] == suite) &
-        (reservas_expandidas_unique['fecha_ocupada'].dt.month == int(mes_seleccionado)) &
-        (reservas_expandidas_unique['fecha_ocupada'].dt.year == int(año_seleccionado))
-    ][['fecha_ocupada', 'source']]
+    for suite in suites_todas:
+        dias_ocupados = reservas_expandidas_unique[
+            (reservas_expandidas_unique['property_name'] == suite) &
+            (reservas_expandidas_unique['fecha_ocupada'].dt.month == int(mes_seleccionado)) &
+            (reservas_expandidas_unique['fecha_ocupada'].dt.year == int(año_seleccionado))
+        ][['fecha_ocupada', 'source']]
 
-    dias_ocupados['fecha_ocupada'] = dias_ocupados['fecha_ocupada'].dt.strftime('%m-%d')
-    dias_ocupados['marca'] = dias_ocupados['source'].map(acronimos).fillna('')
-    dias_ocupados['marca'] = '🟩 ' + dias_ocupados['marca']
+        dias_ocupados['fecha_ocupada'] = dias_ocupados['fecha_ocupada'].dt.strftime('%m-%d')
+        dias_ocupados['marca'] = dias_ocupados['source'].map(acronimos).fillna('')
+        dias_ocupados['marca'] = '🟩 ' + dias_ocupados['marca']
 
-    ocupacion_dict = dias_ocupados.set_index('fecha_ocupada')['marca'].to_dict()
-    tabla_ocupacion[suite] = tabla_ocupacion.index.map(ocupacion_dict).fillna('')
+        ocupacion_dict = dias_ocupados.set_index('fecha_ocupada')['marca'].to_dict()
+        tabla_ocupacion[suite] = tabla_ocupacion.index.map(ocupacion_dict).fillna('')
 
-tabla_ocupacion.index.name = "Día"
-st.dataframe(tabla_ocupacion)
+    tabla_ocupacion.index.name = "Día"
+    st.dataframe(tabla_ocupacion)
